@@ -29,5 +29,8 @@
     "pretty-quick": "^3.1.3",
     "typescript": "*",
     "vite": "^4.0.0"
+  },
+  "dependencies": {
+    "konva": "^8.4.2"
   }
 }
