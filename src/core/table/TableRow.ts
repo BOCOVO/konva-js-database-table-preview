@@ -31,6 +31,7 @@ export class TableColumn {
       height: COLUMN_HEIGHT,
       fontSize: MD_FONT_SIZE,
       fontFamily: FONT_FAMILY,
+      fontStyle: data.pk ? "bold" : "normal",
     });
 
     const typeName = new Konva.Text({
@@ -42,6 +43,7 @@ export class TableColumn {
       width: TABLE_WIDTH,
       fontSize: MD_FONT_SIZE,
       fontFamily: FONT_FAMILY,
+      fontStyle: data.pk ? "bold" : "normal",
     });
 
     const bg = new Konva.Rect({
