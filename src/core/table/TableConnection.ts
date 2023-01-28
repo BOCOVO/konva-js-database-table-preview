@@ -10,11 +10,20 @@ import {
   MD_FONT_SIZE,
 } from "./constants";
 import type { Table } from "./Table";
+import type { RelationType } from "./types";
+import { computeConnectionSymbolPoints } from "./utils";
+
+const defaultLineConfig: Konva.LineConfig = {
+  points: [],
+  stroke: CONNECTION_COLOR,
+  strokeWidth: CONNECTION_STROKE,
+  lineJoin: "round",
+};
 
 interface ConnectTableData {
   table: Table;
   id: string;
-  relation: "1" | "*";
+  relation: RelationType;
 }
 
 interface ConnectTableParam {
@@ -29,20 +38,17 @@ type Cords = [number, number, boolean];
 
 export class TableConnection {
   #node!: Konva.Line;
-  #startRelationTypeText?: Konva.Text;
-  #endRelationTypeText?: Konva.Text;
+  #startRelationTypeText: Konva.Text | null = null;
+  #endRelationTypeText: Konva.Text | null = null;
+  #endRelationSymbol?: Konva.Line;
+  #startRelationSymbol?: Konva.Line;
 
   constructor() {
     this.init();
   }
 
   init(): void {
-    const line = new Konva.Line({
-      points: [],
-      stroke: CONNECTION_COLOR,
-      strokeWidth: CONNECTION_STROKE,
-      lineJoin: "round",
-    });
+    const line = new Konva.Line(defaultLineConfig);
 
     this.#node = line;
 
@@ -108,6 +114,28 @@ export class TableConnection {
     );
     this.#endRelationTypeText?.y(y2 - MD_FONT_SIZE);
 
+    if (this.#startRelationTypeText !== null) {
+      this.#startRelationSymbol?.points(
+        computeConnectionSymbolPoints(
+          this.#startRelationTypeText.text() as RelationType,
+          !x1ToLeft || !isCrossX,
+          x1,
+          y1
+        )
+      );
+    }
+
+    if (this.#endRelationTypeText !== null) {
+      this.#endRelationSymbol?.points(
+        computeConnectionSymbolPoints(
+          this.#endRelationTypeText?.text() as RelationType,
+          x1ToLeft || !isCrossX,
+          x2,
+          y2
+        )
+      );
+    }
+
     if (isCrossX) {
       const x1NextPoint = x1ToLeft
         ? x1 - CROSS_CONNECTION_MIN_MARGIN
@@ -143,6 +171,9 @@ export class TableConnection {
       opacity: 0,
     });
 
+    this.#startRelationSymbol = new Konva.Line(defaultLineConfig);
+    this.#endRelationSymbol = new Konva.Line(defaultLineConfig);
+
     this.#endRelationTypeText.setText(end.relation);
     this.#startRelationTypeText.setText(start.relation);
 
@@ -175,7 +206,12 @@ export class TableConnection {
 
     endTable.on("mouseout", this.setBlur);
 
-    return [this.#endRelationTypeText, this.#startRelationTypeText];
+    return [
+      this.#endRelationTypeText,
+      this.#startRelationTypeText,
+      this.#endRelationSymbol,
+      this.#startRelationSymbol,
+    ];
   }
 
   computeTopMargin(index: number): number {
@@ -184,12 +220,16 @@ export class TableConnection {
 
   setHover: () => void = () => {
     this.#node.stroke(CONNECTION_ACTIVE_COLOR);
+    this.#startRelationSymbol?.stroke(CONNECTION_ACTIVE_COLOR);
+    this.#endRelationSymbol?.stroke(CONNECTION_ACTIVE_COLOR);
     this.#endRelationTypeText?.opacity(1);
     this.#startRelationTypeText?.opacity(1);
   };
 
   setBlur: () => void = () => {
     this.#node.stroke(CONNECTION_COLOR);
+    this.#startRelationSymbol?.stroke(CONNECTION_COLOR);
+    this.#endRelationSymbol?.stroke(CONNECTION_COLOR);
     this.#endRelationTypeText?.opacity(0);
     this.#startRelationTypeText?.opacity(0);
   };

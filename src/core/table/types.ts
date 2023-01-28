@@ -9,3 +9,5 @@ export interface ColumnData {
   type: string;
   id: string;
 }
+
+export type RelationType = "1" | "*";
