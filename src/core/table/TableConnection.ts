@@ -1,4 +1,5 @@
 import Konva from "konva";
+
 import {
   COLUMN_HEIGHT,
   CONNECTION_ACTIVE_COLOR,
@@ -211,6 +212,7 @@ export class TableConnection {
       this.#startRelationTypeText,
       this.#endRelationSymbol,
       this.#startRelationSymbol,
+      this.#node,
     ];
   }
 
