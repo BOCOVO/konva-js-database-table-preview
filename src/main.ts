@@ -57,17 +57,20 @@ const table2 = new Table(group.x(), group.y(), {
 
 const line = new TableConnection();
 
-line.connectTable({
+const lineNodes = line.connectTable({
   end: {
     id: "1",
     table: table2,
+    relation: "*",
   },
   start: {
     id: "4",
     table,
+    relation: "1",
   },
 });
 
+group.add(...lineNodes);
 group.add(line.getNode());
 group.add(table.getNode());
 group.add(table2.getNode());

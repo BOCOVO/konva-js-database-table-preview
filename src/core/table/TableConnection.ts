@@ -7,12 +7,14 @@ import {
   CONNECTION_STROKE,
   CROSS_CONNECTION_MIN_MARGIN,
   DEFAULT_PADDING,
+  MD_FONT_SIZE,
 } from "./constants";
 import type { Table } from "./Table";
 
 interface ConnectTableData {
   table: Table;
   id: string;
+  relation: "1" | "*";
 }
 
 interface ConnectTableParam {
@@ -27,6 +29,8 @@ type Cords = [number, number, boolean];
 
 export class TableConnection {
   #node!: Konva.Line;
+  #startRelationTypeText?: Konva.Text;
+  #endRelationTypeText?: Konva.Text;
 
   constructor() {
     this.init();
@@ -82,17 +86,28 @@ export class TableConnection {
 
     const [posX1, posX2, isCrossX] = sortedCords[0];
 
-    this.#node.points(this.computeLinePoints([posX1, posX2, y1, y2, isCrossX]));
+    this.updateLine([posX1, posX2, y1, y2, isCrossX]);
   }
 
-  computeLinePoints([x1, x2, y1, y2, isCrossX]: [
+  updateLine([x1, x2, y1, y2, isCrossX]: [
     number,
     number,
     number,
     number,
     boolean
-  ]): number[] {
+  ]): void {
     const x1ToLeft = x1 - x2 > 0;
+
+    this.#startRelationTypeText?.x(
+      x1 + (!x1ToLeft || !isCrossX ? MD_FONT_SIZE / 2 : -MD_FONT_SIZE)
+    );
+    this.#startRelationTypeText?.y(y1 - MD_FONT_SIZE);
+
+    this.#endRelationTypeText?.x(
+      x2 + (x1ToLeft || !isCrossX ? MD_FONT_SIZE / 2 : -MD_FONT_SIZE)
+    );
+    this.#endRelationTypeText?.y(y2 - MD_FONT_SIZE);
+
     if (isCrossX) {
       const x1NextPoint = x1ToLeft
         ? x1 - CROSS_CONNECTION_MIN_MARGIN
@@ -101,19 +116,35 @@ export class TableConnection {
         ? x2 + CROSS_CONNECTION_MIN_MARGIN
         : x2 - CROSS_CONNECTION_MIN_MARGIN;
 
-      return [x1, y1, x1NextPoint, y1, x2NextPoint, y2, x2, y2];
+      this.#node.points([x1, y1, x1NextPoint, y1, x2NextPoint, y2, x2, y2]);
+
+      return;
     }
 
     const x1NextPoint = x1ToLeft
       ? x1 + CROSS_CONNECTION_MIN_MARGIN
       : x2 + CROSS_CONNECTION_MIN_MARGIN;
 
-    return [x1, y1, x1NextPoint, y1, x1NextPoint, y2, x2, y2];
+    this.#node.points([x1, y1, x1NextPoint, y1, x1NextPoint, y2, x2, y2]);
   }
 
-  connectTable({ end, start }: ConnectTableParam): void {
+  connectTable({
+    end,
+    start,
+  }: ConnectTableParam): Parameters<Konva.Group["add"]> {
     const startTable = start.table.getNode();
     const endTable = end.table.getNode();
+
+    this.#endRelationTypeText = new Konva.Text({
+      opacity: 0,
+    });
+
+    this.#startRelationTypeText = new Konva.Text({
+      opacity: 0,
+    });
+
+    this.#endRelationTypeText.setText(end.relation);
+    this.#startRelationTypeText.setText(start.relation);
 
     const updater = (): void => {
       const x1 = startTable.x() + CONNECTION_MARGIN;
@@ -143,6 +174,8 @@ export class TableConnection {
     endTable.on("mouseover", this.setHover);
 
     endTable.on("mouseout", this.setBlur);
+
+    return [this.#endRelationTypeText, this.#startRelationTypeText];
   }
 
   computeTopMargin(index: number): number {
@@ -151,9 +184,13 @@ export class TableConnection {
 
   setHover: () => void = () => {
     this.#node.stroke(CONNECTION_ACTIVE_COLOR);
+    this.#endRelationTypeText?.opacity(1);
+    this.#startRelationTypeText?.opacity(1);
   };
 
   setBlur: () => void = () => {
     this.#node.stroke(CONNECTION_COLOR);
+    this.#endRelationTypeText?.opacity(0);
+    this.#startRelationTypeText?.opacity(0);
   };
 }
